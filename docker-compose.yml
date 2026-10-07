@@ -100,10 +100,8 @@ services:
   # 4. Snort 3 — IDS/IPS, détection sur l'interface du réseau lab
   # ---------------------------------------------------------------------------
   snort:
-    build:
-      context: ./snort
-      dockerfile: Dockerfile
-    image: siem-lab/snort3:latest
+    # Image Snort 3 officielle de Cisco Talos (pas de build local nécessaire)
+    image: ciscotalos/snort3:latest
     container_name: siem-snort
     cap_add:
       - NET_ADMIN
@@ -126,7 +124,6 @@ services:
             -l /var/log/snort
             -A alert_json
             -k none
-            -m 0x1b
     logging: *default-logging
 
   # ---------------------------------------------------------------------------
