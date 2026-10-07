@@ -1,0 +1,30 @@
+# =============================================================================
+#  ElastAlert2 — configuration globale
+#  Interroge Elasticsearch, applique les règles de /opt/elastalert/rules
+#  et envoie les alertes vers Slack.
+# =============================================================================
+
+# Où trouver les règles
+rules_folder: /opt/elastalert/rules
+
+# Fréquence d'exécution des requêtes
+run_every:
+  minutes: 1
+
+# Fenêtre temporelle interrogée à chaque passe (doit couvrir run_every + marge)
+buffer_time:
+  minutes: 5
+
+# Connexion Elasticsearch
+es_host: elasticsearch
+es_port: 9200
+# Décommenter si la sécurité ES est activée :
+# es_username: elastic
+# es_password: "changeme"
+
+# Index interne où ElastAlert2 stocke son état
+writeback_index: elastalert_status
+
+# Nombre de tentatives d'alerte avant abandon
+alert_time_limit:
+  days: 2

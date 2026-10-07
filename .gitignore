@@ -1,0 +1,23 @@
+# =============================================================================
+#  .gitignore — fichiers à NE PAS versionner
+# =============================================================================
+
+# Secrets : le webhook Slack ne doit jamais partir sur GitHub
+.env
+
+# Données et logs générés à l'exécution
+*.log
+snort/*.txt
+snort/alert_json.txt
+snort/alert_fast.txt
+snort/syslog-ng-parsed.log
+
+# Volumes / données locales éventuelles
+data/
+es-data/
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+*.swp
+*~

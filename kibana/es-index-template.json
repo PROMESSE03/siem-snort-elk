@@ -1,0 +1,31 @@
+{
+  "index_patterns": ["snort-alerts-*"],
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0
+    },
+    "mappings": {
+      "properties": {
+        "@timestamp":        { "type": "date" },
+        "snort": {
+          "properties": {
+            "src_addr":  { "type": "ip" },
+            "dst_addr":  { "type": "ip" },
+            "src_port":  { "type": "integer" },
+            "dst_port":  { "type": "integer" },
+            "proto":     { "type": "keyword" },
+            "msg":       { "type": "text", "fields": { "keyword": { "type": "keyword", "ignore_above": 256 } } },
+            "class":     { "type": "keyword" },
+            "priority":  { "type": "integer" },
+            "sid":       { "type": "keyword" },
+            "rev":       { "type": "keyword" },
+            "action":    { "type": "keyword" },
+            "service":   { "type": "keyword" },
+            "iface":     { "type": "keyword" }
+          }
+        }
+      }
+    }
+  }
+}

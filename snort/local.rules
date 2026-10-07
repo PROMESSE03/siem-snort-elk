@@ -1,0 +1,99 @@
+# =============================================================================
+#  Règles Snort 3 personnalisées — Lab SIEM
+#  Chaque scénario d'attaque possède une (ou plusieurs) règle(s) identifiable(s)
+#  par son SID. Plage SID locale réservée : 1000001 - 1999999
+# =============================================================================
+#
+#  Réseau du lab : 172.28.0.0/24
+#    - Cible (target) : 172.28.0.40
+#    - Attaquant      : 172.28.0.30
+#
+# =============================================================================
+
+
+# -----------------------------------------------------------------------------
+#  SCÉNARIO 1 — Scan de ports (Nmap)
+# -----------------------------------------------------------------------------
+# Détection d'un balayage TCP SYN : beaucoup de SYN vers des ports différents.
+alert tcp any any -> $HOME_NET any ( \
+    msg:"LAB-SCAN Nmap SYN scan detecte"; \
+    flags:S; \
+    detection_filter:track by_src, count 20, seconds 5; \
+    classtype:attempted-recon; \
+    priority:2; \
+    sid:1000001; rev:1; )
+
+# Scan "furtif" NULL (aucun flag) souvent utilisé par -sN
+alert tcp any any -> $HOME_NET any ( \
+    msg:"LAB-SCAN Nmap NULL scan detecte"; \
+    flags:0; \
+    classtype:attempted-recon; \
+    priority:2; \
+    sid:1000002; rev:1; )
+
+# Scan XMAS (FIN+PSH+URG) utilisé par -sX
+alert tcp any any -> $HOME_NET any ( \
+    msg:"LAB-SCAN Nmap XMAS scan detecte"; \
+    flags:FPU; \
+    classtype:attempted-recon; \
+    priority:2; \
+    sid:1000003; rev:1; )
+
+
+# -----------------------------------------------------------------------------
+#  SCÉNARIO 2 — Brute-force SSH (Hydra)
+# -----------------------------------------------------------------------------
+# Plusieurs ouvertures de connexion vers le port 22 en peu de temps.
+alert tcp any any -> $HOME_NET 22 ( \
+    msg:"LAB-BRUTEFORCE SSH tentatives multiples"; \
+    flags:S; \
+    detection_filter:track by_src, count 10, seconds 20; \
+    classtype:attempted-admin; \
+    priority:1; \
+    sid:1000010; rev:1; )
+
+
+# -----------------------------------------------------------------------------
+#  SCÉNARIO 3 — Déni de service (Ping flood / ICMP)
+# -----------------------------------------------------------------------------
+# Volume anormal de paquets ICMP echo-request depuis une même source.
+alert icmp any any -> $HOME_NET any ( \
+    msg:"LAB-DOS ICMP ping flood detecte"; \
+    itype:8; \
+    detection_filter:track by_src, count 50, seconds 5; \
+    classtype:attempted-dos; \
+    priority:2; \
+    sid:1000020; rev:1; )
+
+
+# -----------------------------------------------------------------------------
+#  SCÉNARIO 4 — Injection SQL (web)
+# -----------------------------------------------------------------------------
+# Motifs SQLi courants dans les requêtes HTTP vers le serveur web (port 80).
+alert tcp any any -> $HOME_NET 80 ( \
+    msg:"LAB-WEB Injection SQL - UNION SELECT"; \
+    flow:to_server,established; \
+    http_uri; \
+    content:"union",nocase; \
+    content:"select",nocase; \
+    classtype:web-application-attack; \
+    priority:1; \
+    sid:1000030; rev:1; )
+
+alert tcp any any -> $HOME_NET 80 ( \
+    msg:"LAB-WEB Injection SQL - OR 1=1"; \
+    flow:to_server,established; \
+    http_uri; \
+    content:"or 1=1",nocase; \
+    classtype:web-application-attack; \
+    priority:1; \
+    sid:1000031; rev:1; )
+
+alert tcp any any -> $HOME_NET 80 ( \
+    msg:"LAB-WEB Injection SQL - commentaire SQL"; \
+    flow:to_server,established; \
+    http_uri; \
+    content:"'--"; \
+    classtype:web-application-attack; \
+    priority:1; \
+    sid:1000032; rev:1; )

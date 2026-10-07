@@ -1,0 +1,43 @@
+# =============================================================================
+#  Règle ElastAlert2 — Scénario 2 : Brute-force SSH (Hydra)
+#  Déclenche quand plusieurs alertes SSH surviennent pour une même source,
+#  signe d'une attaque par force brute soutenue.
+# =============================================================================
+name: "Brute-force SSH detecte"
+type: frequency
+index: "snort-alerts-*"
+
+# Au moins 3 alertes brute-force SSH ...
+num_events: 3
+# ... sur une fenêtre de 2 minutes
+timeframe:
+  minutes: 2
+
+filter:
+  - query:
+      query_string:
+        query: 'snort.sid:1000010'
+
+# Compte par IP source
+query_key: "snort.src_addr"
+
+realert:
+  minutes: 5
+
+alert:
+  - slack
+
+slack_webhook_url: "!ENV ${SLACK_WEBHOOK_URL}"
+slack_username_override: "Snort IDS"
+slack_emoji_override: ":lock:"
+slack_msg_color: "danger"
+slack_title: ":rotating_light: Attaque — Brute-force SSH"
+alert_text_type: alert_text_only
+alert_text: |-
+  *Type*      : Brute-force SSH (force brute sur le port 22)
+  *Source*    : {0}
+  *Occurrences*: {1} tentatives detectees
+  *Gravite*   : CRITIQUE
+alert_text_args:
+  - snort.src_addr
+  - num_matches

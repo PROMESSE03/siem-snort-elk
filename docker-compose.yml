@@ -1,0 +1,195 @@
+name: siem-lab
+
+# =============================================================================
+#  Chaîne SIEM de détection d'intrusions
+#  Snort 3 -> syslog-ng -> Elasticsearch -> Kibana  +  ElastAlert2 -> Slack
+# =============================================================================
+#  Démarrage :  ./scripts/setup.sh
+#  Arrêt     :  ./scripts/teardown.sh
+# =============================================================================
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # 1. Elasticsearch — indexation et recherche des événements
+  # ---------------------------------------------------------------------------
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3
+    container_name: siem-elasticsearch
+    environment:
+      - node.name=siem-es01
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+      # Sécurité désactivée : LAB UNIQUEMENT. Voir README pour l'activer.
+      - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false
+    ulimits:
+      memlock: { soft: -1, hard: -1 }
+      nofile:  { soft: 65536, hard: 65536 }
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    networks:
+      siem-net:
+        ipv4_address: 172.28.0.10
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q '\"status\":\"\\(green\\|yellow\\)\"'"]
+      interval: 15s
+      timeout: 10s
+      retries: 12
+      start_period: 60s
+    logging: *default-logging
+
+  # ---------------------------------------------------------------------------
+  # 2. Kibana — visualisation, dashboards, exploration
+  # ---------------------------------------------------------------------------
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.15.3
+    container_name: siem-kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - SERVER_PUBLICBASEURL=http://localhost:5601
+      - XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY=min32charlongkeyforkibanasecurity01
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      siem-net:
+        ipv4_address: 172.28.0.11
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:5601/api/status | grep -q '\"level\":\"available\"'"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 90s
+    logging: *default-logging
+
+  # ---------------------------------------------------------------------------
+  # 3. syslog-ng — collecte des alertes Snort (JSON) et envoi vers ES
+  # ---------------------------------------------------------------------------
+  syslog-ng:
+    image: balabit/syslog-ng:4.8.0
+    container_name: siem-syslog-ng
+    command: ["--foreground", "--no-caps", "-f", "/etc/syslog-ng/syslog-ng.conf"]
+    volumes:
+      - ./syslog-ng/syslog-ng.conf:/etc/syslog-ng/syslog-ng.conf:ro
+      # Répertoire partagé où Snort écrit alert_json.txt
+      - snort-logs:/var/log/snort:ro
+    ports:
+      - "514:514/udp"   # syslog réseau (optionnel, pour d'autres sources)
+      - "601:601/tcp"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      siem-net:
+        ipv4_address: 172.28.0.12
+    logging: *default-logging
+
+  # ---------------------------------------------------------------------------
+  # 4. Snort 3 — IDS/IPS, détection sur l'interface du réseau lab
+  # ---------------------------------------------------------------------------
+  snort:
+    build:
+      context: ./snort
+      dockerfile: Dockerfile
+    image: siem-lab/snort3:latest
+    container_name: siem-snort
+    # Snort écoute le trafic du réseau Docker siem-net.
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - ./snort/snort.lua:/usr/local/etc/snort/snort.lua:ro
+      - ./snort/local.rules:/usr/local/etc/snort/rules/local.rules:ro
+      - snort-logs:/var/log/snort
+    networks:
+      siem-net:
+        ipv4_address: 172.28.0.20
+    depends_on:
+      - syslog-ng
+    # eth0 = interface du conteneur sur siem-net
+    command: >
+      snort -c /usr/local/etc/snort/snort.lua
+            -i eth0
+            -l /var/log/snort
+            -A alert_json
+            -k none
+            -m 0x1b
+    logging: *default-logging
+
+  # ---------------------------------------------------------------------------
+  # 5. ElastAlert2 — règles d'alerte -> notifications Slack
+  # ---------------------------------------------------------------------------
+  elastalert:
+    image: jertel/elastalert2:2.21.0
+    container_name: siem-elastalert
+    environment:
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+    volumes:
+      - ./elastalert/config.yaml:/opt/elastalert/config.yaml:ro
+      - ./elastalert/rules:/opt/elastalert/rules:ro
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      siem-net:
+        ipv4_address: 172.28.0.13
+    logging: *default-logging
+
+  # ---------------------------------------------------------------------------
+  # 6. Attacker — conteneur outillé pour jouer les scénarios d'attaque
+  # ---------------------------------------------------------------------------
+  attacker:
+    build:
+      context: ./attacks
+      dockerfile: Dockerfile
+    image: siem-lab/attacker:latest
+    container_name: siem-attacker
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+    volumes:
+      - ./attacks:/attacks:ro
+    networks:
+      siem-net:
+        ipv4_address: 172.28.0.30
+    # Reste en vie pour qu'on puisse exec dedans
+    command: ["sleep", "infinity"]
+    logging: *default-logging
+
+  # ---------------------------------------------------------------------------
+  # 7. Target — cible vulnérable (SSH + web) pour les attaques
+  # ---------------------------------------------------------------------------
+  target:
+    build:
+      context: ./attacks
+      dockerfile: Dockerfile.target
+    image: siem-lab/target:latest
+    container_name: siem-target
+    networks:
+      siem-net:
+        ipv4_address: 172.28.0.40
+    logging: *default-logging
+
+networks:
+  siem-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24
+          gateway: 172.28.0.1
+
+volumes:
+  es-data:
+  snort-logs:

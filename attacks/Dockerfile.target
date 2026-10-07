@@ -1,0 +1,33 @@
+# =============================================================================
+#  Target — cible vulnérable (SSH + serveur web) pour les scénarios d'attaque
+#  LAB UNIQUEMENT. Identifiants faibles volontaires.
+# =============================================================================
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        openssh-server \
+        apache2 \
+        php \
+        libapache2-mod-php \
+        ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+# --- Utilisateur cible du brute-force SSH (identifiants volontairement faibles)
+RUN useradd -m -s /bin/bash victime && \
+    echo 'victime:password123' | chpasswd && \
+    mkdir -p /var/run/sshd && \
+    sed -i 's/#PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config
+
+# --- Page web vulnérable à l'injection SQL (simulation, pas de vraie BDD)
+RUN mkdir -p /var/www/html
+COPY vuln-app/index.php /var/www/html/index.php
+RUN a2enmod php* 2>/dev/null || true
+
+EXPOSE 22 80
+
+COPY entrypoint-target.sh /entrypoint-target.sh
+RUN chmod +x /entrypoint-target.sh
+ENTRYPOINT ["/entrypoint-target.sh"]

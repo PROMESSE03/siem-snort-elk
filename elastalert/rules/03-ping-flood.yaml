@@ -1,0 +1,36 @@
+# =============================================================================
+#  Règle ElastAlert2 — Scénario 3 : Déni de service (Ping flood / ICMP)
+# =============================================================================
+name: "Ping flood / DoS ICMP detecte"
+type: any
+index: "snort-alerts-*"
+
+filter:
+  - query:
+      query_string:
+        query: 'snort.sid:1000020'
+
+query_key: "snort.src_addr"
+realert:
+  minutes: 5
+
+alert:
+  - slack
+
+slack_webhook_url: "!ENV ${SLACK_WEBHOOK_URL}"
+slack_username_override: "Snort IDS"
+slack_emoji_override: ":ocean:"
+slack_msg_color: "danger"
+slack_title: ":rotating_light: Attaque — Deni de service (ICMP flood)"
+alert_text_type: alert_text_only
+alert_text: |-
+  *Type*      : Ping flood (deni de service ICMP)
+  *Source*    : {0}
+  *Cible*     : {1}
+  *Signature* : {2}
+  *Horodatage*: {3}
+alert_text_args:
+  - snort.src_addr
+  - snort.dst_addr
+  - snort.msg
+  - "@timestamp"

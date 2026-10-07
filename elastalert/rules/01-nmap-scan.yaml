@@ -1,0 +1,41 @@
+# =============================================================================
+#  Règle ElastAlert2 — Scénario 1 : Scan de ports (Nmap)
+#  Déclenche dès qu'une alerte Snort de reconnaissance apparaît.
+# =============================================================================
+name: "Scan de ports detecte (Nmap)"
+type: any
+index: "snort-alerts-*"
+
+# Condition : au moins un événement correspondant dans la fenêtre
+filter:
+  - query:
+      query_string:
+        query: 'snort.sid:(1000001 OR 1000002 OR 1000003)'
+
+# Anti-spam : une seule alerte par IP source toutes les 5 minutes
+realert:
+  minutes: 5
+query_key: "snort.src_addr"
+
+alert:
+  - slack
+
+slack_webhook_url: "!ENV ${SLACK_WEBHOOK_URL}"
+slack_username_override: "Snort IDS"
+slack_emoji_override: ":mag:"
+slack_msg_color: "warning"
+slack_title: ":mag: Reconnaissance — Scan de ports"
+alert_text_type: alert_text_only
+alert_text: |-
+  *Type*      : Scan de ports (reconnaissance)
+  *Source*    : {0}
+  *Cible*     : {1}
+  *Signature* : {2}
+  *Priorite*  : {3}
+  *Horodatage*: {4}
+alert_text_args:
+  - snort.src_addr
+  - snort.dst_addr
+  - snort.msg
+  - snort.priority
+  - "@timestamp"
