@@ -121,7 +121,7 @@ services:
     # on enveloppe donc la commande dans bash -lc.
     # eth0 = interface de la cible (partagée via network_mode: service:target)
     entrypoint: ["bash", "-lc"]
-    command: ["/home/snorty/snort3/bin/snort -c /usr/local/etc/snort/snort.lua -i eth0 -l /var/log/snort -A alert_json -k none"]
+    command: ["/home/snorty/snort3/bin/snort -c /usr/local/etc/snort/snort.lua -i eth0 -A alert_json -l /var/log/snort -k none --daq afpacket"]
     logging: *default-logging
 
   # ---------------------------------------------------------------------------
