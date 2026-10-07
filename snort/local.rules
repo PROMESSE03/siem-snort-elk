@@ -72,28 +72,22 @@ alert icmp any any -> $HOME_NET any ( \
 # Motifs SQLi courants dans les requêtes HTTP vers le serveur web (port 80).
 alert tcp any any -> $HOME_NET 80 ( \
     msg:"LAB-WEB Injection SQL - UNION SELECT"; \
-    flow:to_server,established; \
-    http_uri; \
     content:"union",nocase; \
     content:"select",nocase; \
     classtype:web-application-attack; \
     priority:1; \
-    sid:1000030; rev:1; )
+    sid:1000030; rev:2; )
 
 alert tcp any any -> $HOME_NET 80 ( \
     msg:"LAB-WEB Injection SQL - OR 1=1"; \
-    flow:to_server,established; \
-    http_uri; \
     content:"or 1=1",nocase; \
     classtype:web-application-attack; \
     priority:1; \
-    sid:1000031; rev:1; )
+    sid:1000031; rev:2; )
 
 alert tcp any any -> $HOME_NET 80 ( \
     msg:"LAB-WEB Injection SQL - commentaire SQL"; \
-    flow:to_server,established; \
-    http_uri; \
     content:"'--"; \
     classtype:web-application-attack; \
     priority:1; \
-    sid:1000032; rev:1; )
+    sid:1000032; rev:2; )

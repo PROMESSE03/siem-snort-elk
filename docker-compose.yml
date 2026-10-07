@@ -100,28 +100,34 @@ services:
   # 4. Snort 3 — IDS/IPS, détection sur l'interface du réseau lab
   # ---------------------------------------------------------------------------
   snort:
-    # Image Snort 3 officielle de Cisco Talos (pas de build local nécessaire)
+    # Image Snort 3 officielle de Cisco Talos.
+    # NB : Docker Desktop/WSL2 interdit la capture réseau brute (PF_PACKET),
+    # on rejoue donc des captures .pcap d'attaques (snort -r). La détection et
+    # toute la chaîne en aval sont identiques à une capture en direct.
     image: ciscotalos/snort3:latest
     container_name: siem-snort
-    cap_add:
-      - NET_ADMIN
-      - NET_RAW
     volumes:
       - ./snort/snort.lua:/usr/local/etc/snort/snort.lua:ro
       - ./snort/local.rules:/usr/local/etc/snort/rules/local.rules:ro
+      - ./pcaps:/pcaps:ro
       - snort-logs:/var/log/snort
-    # Snort partage la pile réseau de la cible : il voit ainsi TOUT le trafic
-    # entrant/sortant de "target" (indispensable sur un réseau Docker, où un
-    # conteneur tiers ne verrait pas le trafic unicast entre deux autres).
-    network_mode: "service:target"
+    networks:
+      siem-net:
+        ipv4_address: 172.28.0.20
     depends_on:
       - syslog-ng
-      - target
-    # L'image Talos n'expose snort dans le PATH que via un shell de connexion :
-    # on enveloppe donc la commande dans bash -lc.
-    # eth0 = interface de la cible (partagée via network_mode: service:target)
+    # Au démarrage : rejoue les 4 captures d'attaques, puis reste en vie
+    # (sleep infinity) pour pouvoir rejouer un scénario à la demande via
+    # `docker compose exec snort ...`.
     entrypoint: ["bash", "-lc"]
-    command: ["/home/snorty/snort3/bin/snort -c /usr/local/etc/snort/snort.lua -i eth0 -A alert_json -l /var/log/snort -k none --daq afpacket"]
+    command:
+      - |
+        for f in /pcaps/*.pcap; do
+          echo "[replay] $f";
+          /home/snorty/snort3/bin/snort -c /usr/local/etc/snort/snort.lua -r "$f" -A alert_json -l /var/log/snort -k none;
+        done;
+        echo "[replay] termine - conteneur maintenu en vie";
+        sleep infinity
     logging: *default-logging
 
   # ---------------------------------------------------------------------------
