@@ -117,13 +117,10 @@ services:
     depends_on:
       - syslog-ng
       - target
-    # eth0 = interface de la cible (partagée)
-    command: >
-      snort -c /usr/local/etc/snort/snort.lua
-            -i eth0
-            -l /var/log/snort
-            -A alert_json
-            -k none
+    # L'image Talos a un entrypoint qui lance bash : on le force sur snort.
+    # eth0 = interface de la cible (partagée via network_mode: service:target)
+    entrypoint: ["snort"]
+    command: ["-c", "/usr/local/etc/snort/snort.lua", "-i", "eth0", "-l", "/var/log/snort", "-A", "alert_json", "-k", "none"]
     logging: *default-logging
 
   # ---------------------------------------------------------------------------
