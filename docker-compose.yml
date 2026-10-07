@@ -117,10 +117,11 @@ services:
     depends_on:
       - syslog-ng
       - target
-    # L'image Talos a un entrypoint qui lance bash : on le force sur snort.
+    # L'image Talos n'expose snort dans le PATH que via un shell de connexion :
+    # on enveloppe donc la commande dans bash -lc.
     # eth0 = interface de la cible (partagée via network_mode: service:target)
-    entrypoint: ["snort"]
-    command: ["-c", "/usr/local/etc/snort/snort.lua", "-i", "eth0", "-l", "/var/log/snort", "-A", "alert_json", "-k", "none"]
+    entrypoint: ["bash", "-lc"]
+    command: ["snort -c /usr/local/etc/snort/snort.lua -i eth0 -l /var/log/snort -A alert_json -k none"]
     logging: *default-logging
 
   # ---------------------------------------------------------------------------
