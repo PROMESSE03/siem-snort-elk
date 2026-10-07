@@ -105,7 +105,6 @@ services:
       dockerfile: Dockerfile
     image: siem-lab/snort3:latest
     container_name: siem-snort
-    # Snort écoute le trafic du réseau Docker siem-net.
     cap_add:
       - NET_ADMIN
       - NET_RAW
@@ -113,12 +112,14 @@ services:
       - ./snort/snort.lua:/usr/local/etc/snort/snort.lua:ro
       - ./snort/local.rules:/usr/local/etc/snort/rules/local.rules:ro
       - snort-logs:/var/log/snort
-    networks:
-      siem-net:
-        ipv4_address: 172.28.0.20
+    # Snort partage la pile réseau de la cible : il voit ainsi TOUT le trafic
+    # entrant/sortant de "target" (indispensable sur un réseau Docker, où un
+    # conteneur tiers ne verrait pas le trafic unicast entre deux autres).
+    network_mode: "service:target"
     depends_on:
       - syslog-ng
-    # eth0 = interface du conteneur sur siem-net
+      - target
+    # eth0 = interface de la cible (partagée)
     command: >
       snort -c /usr/local/etc/snort/snort.lua
             -i eth0
