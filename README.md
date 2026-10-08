@@ -6,6 +6,22 @@ Projet de laboratoire mettant en place une chaîne complète de **détection, co
 
 ---
 
+## 📸 Aperçu
+
+### Tableau de bord Kibana
+Visualisation des alertes par type d'attaque et dans le temps, avec distinction de gravité (rouge = critique).
+
+![Tableau de bord Kibana](images/dashboard-kibana.png)
+
+### Alertes temps réel sur Slack
+Notifications automatiques poussées par ElastAlert2 à chaque détection.
+
+![Alertes Slack](images/alertes-slack.png)
+
+### Exploration des événements (Kibana Discover)
+Liste détaillée des alertes collectées (source, cible, signature, priorité).
+
+![Discover](images/discover-alertes.png)
 ## 📋 Table des matières
 
 1. [Architecture](#-architecture)
