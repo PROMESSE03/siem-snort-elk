@@ -16,10 +16,10 @@ timeframe:
 filter:
   - query:
       query_string:
-        query: 'snort.sid:1000010'
+        query: 'sid:1000010'
 
 # Compte par IP source
-query_key: "snort.src_addr"
+query_key: "src_addr"
 
 realert:
   minutes: 5
@@ -27,7 +27,7 @@ realert:
 alert:
   - slack
 
-slack_webhook_url: "!ENV ${SLACK_WEBHOOK_URL}"
+slack_webhook_url: "REMPLACER_PAR_VOTRE_WEBHOOK"
 slack_username_override: "Snort IDS"
 slack_emoji_override: ":lock:"
 slack_msg_color: "danger"
@@ -39,5 +39,5 @@ alert_text: |-
   *Occurrences*: {1} tentatives detectees
   *Gravite*   : CRITIQUE
 alert_text_args:
-  - snort.src_addr
+  - src_addr
   - num_matches

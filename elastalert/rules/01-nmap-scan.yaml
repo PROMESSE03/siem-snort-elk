@@ -10,17 +10,17 @@ index: "snort-alerts-*"
 filter:
   - query:
       query_string:
-        query: 'snort.sid:(1000001 OR 1000002 OR 1000003)'
+        query: 'sid:(1000001 OR 1000002 OR 1000003)'
 
 # Anti-spam : une seule alerte par IP source toutes les 5 minutes
 realert:
   minutes: 5
-query_key: "snort.src_addr"
+query_key: "src_addr"
 
 alert:
   - slack
 
-slack_webhook_url: "!ENV ${SLACK_WEBHOOK_URL}"
+slack_webhook_url: "REMPLACER_PAR_VOTRE_WEBHOOK"
 slack_username_override: "Snort IDS"
 slack_emoji_override: ":mag:"
 slack_msg_color: "warning"
@@ -34,8 +34,8 @@ alert_text: |-
   *Priorite*  : {3}
   *Horodatage*: {4}
 alert_text_args:
-  - snort.src_addr
-  - snort.dst_addr
-  - snort.msg
-  - snort.priority
+  - src_addr
+  - dst_addr
+  - msg
+  - priority
   - "@timestamp"

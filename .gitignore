@@ -21,3 +21,7 @@ es-data/
 Thumbs.db
 *.swp
 *~
+
+docker-compose.override.yml
+dataview.json
+snort/Dockerfile
