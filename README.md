@@ -1,4 +1,4 @@
-# 🛡️ Chaîne SIEM — Détection d'intrusions
+# Chaîne SIEM - Détection d'intrusions
 
 **Système de détection d'anomalies basé sur un IDS/IPS et la pile Elasticsearch / Kibana**
 
@@ -6,7 +6,7 @@ Projet de laboratoire mettant en place une chaîne complète de **détection, co
 
 ---
 
-## 📸 Aperçu
+##  Aperçu
 
 ### Tableau de bord Kibana
 Visualisation des alertes par type d'attaque et dans le temps, avec distinction de gravité (rouge = critique).
@@ -22,7 +22,7 @@ Notifications automatiques poussées par ElastAlert2 à chaque détection.
 Liste détaillée des alertes collectées (source, cible, signature, priorité).
 
 ![Discover](images/discover-alertes.png)
-## 📋 Table des matières
+##  Table des matières
 
 1. [Architecture](#-architecture)
 2. [Technologies](#-technologies)
@@ -38,7 +38,7 @@ Liste détaillée des alertes collectées (source, cible, signature, priorité).
 
 ---
 
-## 🏗 Architecture
+##  Architecture
 
 ```
 ┌──────────────┐   trafic    ┌──────────────┐   alert_json    ┌──────────────┐
@@ -86,7 +86,7 @@ Liste détaillée des alertes collectées (source, cible, signature, priorité).
 
 ---
 
-## 🧰 Technologies
+##  Technologies
 
 | Outil | Version | Rôle |
 |-------|---------|------|
@@ -99,7 +99,7 @@ Liste détaillée des alertes collectées (source, cible, signature, priorité).
 
 ---
 
-## ✅ Prérequis
+##  Prérequis
 
 - **Docker** et **Docker Compose v2** installés
 - **4 Go de RAM** disponibles au minimum (Elasticsearch en réclame une bonne part)
@@ -114,7 +114,7 @@ echo 'vm.max_map_count=262144' | sudo tee -a /etc/sysctl.conf
 
 ---
 
-## 🚀 Démarrage rapide
+##  Démarrage rapide
 
 ```bash
 # 1. Configurer le webhook Slack
@@ -141,7 +141,7 @@ docker exec -it siem-attacker bash /attacks/run-all.sh
 
 ---
 
-## ⚔️ Scénarios d'attaque
+##  Scénarios d'attaque
 
 Chaque scénario est associé à une ou plusieurs règles Snort identifiables par leur **SID**.
 
@@ -165,14 +165,14 @@ La cible par défaut est `172.28.0.40` (conteneur `target`). On peut passer une 
 
 ---
 
-## 📊 Visualisation dans Kibana
+##  Visualisation dans Kibana
 
 Le dashboard **« SIEM — Tableau de bord Snort »** est importé automatiquement et contient :
 
-- **Alertes dans le temps** — histogramme temporel des détections
-- **Alertes par type** — répartition par signature
-- **Top IP sources attaquantes** — tableau des sources les plus actives
-- **Répartition par priorité** — proportion d'alertes critiques / moyennes
+- **Alertes dans le temps** - histogramme temporel des détections
+- **Alertes par type** - répartition par signature
+- **Top IP sources attaquantes** - tableau des sources les plus actives
+- **Répartition par priorité** - proportion d'alertes critiques / moyennes
 
 **Explorer les données brutes :** Kibana → *Discover* → data view `snort-alerts-*`.
 
@@ -187,12 +187,12 @@ snort.msg : *Injection*                      # toutes les injections SQL
 
 ---
 
-## 🔔 Alertes Slack
+##  Alertes Slack
 
 Dès qu'une règle ElastAlert2 correspond, un message structuré est posté dans Slack :
 
 ```
-🚨 Attaque — Brute-force SSH
+ Attaque — Brute-force SSH
 Type       : Brute-force SSH (force brute sur le port 22)
 Source     : 172.28.0.30
 Occurrences: 8 tentatives detectees
@@ -204,7 +204,7 @@ une même source ne redéclenche pas d'alerte avant quelques minutes.
 
 ---
 
-## 📁 Structure du projet
+##  Structure du projet
 
 ```
 siem-lab/
@@ -250,7 +250,7 @@ siem-lab/
 
 ---
 
-## 🔧 Dépannage
+##  Dépannage
 
 | Symptôme | Cause probable | Solution |
 |----------|----------------|----------|
@@ -271,7 +271,7 @@ curl 'http://localhost:9200/snort-alerts-*/_count?pretty'         # nb d'alertes
 
 ---
 
-## 🚀 Pistes d'amélioration
+##  Pistes d'amélioration
 
 - **Mode IPS** : passer Snort en `inline` + action `reject` pour bloquer le trafic (voir `snort.lua`, variable `ips.mode`).
 - **Enrichissement GeoIP** : ajouter la géolocalisation des IP sources dans syslog-ng.
@@ -282,7 +282,7 @@ curl 'http://localhost:9200/snort-alerts-*/_count?pretty'         # nb d'alertes
 
 ---
 
-## ⚠️ Avertissement
+##  Avertissement
 
 Cet environnement est conçu **exclusivement à des fins pédagogiques**, dans un réseau Docker isolé. La cible contient des identifiants volontairement faibles et une application vulnérable. **Ne jamais exposer ce lab sur Internet ni utiliser les outils d'attaque contre des systèmes dont vous n'êtes pas propriétaire** — c'est illégal.
 
